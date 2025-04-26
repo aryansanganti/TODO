@@ -30,7 +30,7 @@ A modern, full-stack todo application built with React, TypeScript, and MongoDB.
 
 - Node.js (v16 or higher)
 - MongoDB installed and running
-- pnpm (recommended) or npm
+- npm
 
 ### Installation
 
