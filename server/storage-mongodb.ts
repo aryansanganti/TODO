@@ -15,18 +15,15 @@ function convertToTodo(doc: any): Todo {
 export class MongoDBStorage implements IStorage {
   // User methods (placeholder for future implementation)
   async getUser(id: number): Promise<User | undefined> {
-    // Not implemented for this example
     return undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    // Not implemented for this example
     return undefined;
   }
-
-  async createUser(user: InsertUser): Promise<User> {
-    // Not implemented for this example
-    throw new Error('User management not implemented in MongoDB storage');
+  
+  async createUser(insertUser: InsertUser): Promise<User> {
+    throw new Error("Not implemented");
   }
 
   // Todo methods implementation
