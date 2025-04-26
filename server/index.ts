@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import dotenv from "dotenv";
+import { connectToMongoDB } from "./db/mongodb";
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -37,6 +42,18 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Try to connect to MongoDB if connection string is provided
+  if (process.env.MONGODB_URI) {
+    const connected = await connectToMongoDB();
+    if (connected) {
+      log("Using MongoDB for data storage", "app");
+    } else {
+      log("Failed to connect to MongoDB, falling back to in-memory storage", "app");
+    }
+  } else {
+    log("No MongoDB connection string found, using in-memory storage", "app");
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

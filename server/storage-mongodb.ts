@@ -1,6 +1,16 @@
 import { IStorage } from './storage';
-import { TodoModel } from './models/todoModel';
+import { TodoModel, TodoDocument } from './models/todoModel';
 import { Todo, InsertTodo, User, InsertUser } from '@shared/schema';
+import mongoose from 'mongoose';
+
+// Helper function to convert MongoDB document to Todo object
+function convertToTodo(doc: any): Todo {
+  return {
+    id: Number(doc._id.toString()),
+    text: doc.text as string,
+    completed: doc.completed as boolean
+  };
+}
 
 export class MongoDBStorage implements IStorage {
   // User methods (placeholder for future implementation)
@@ -22,23 +32,15 @@ export class MongoDBStorage implements IStorage {
   // Todo methods implementation
   async getTodos(): Promise<Todo[]> {
     const todos = await TodoModel.find().lean();
-    return todos.map(todo => ({
-      id: todo._id.toString(),
-      text: todo.text,
-      completed: todo.completed
-    }));
+    return todos.map(convertToTodo);
   }
 
   async getTodo(id: number): Promise<Todo | undefined> {
     try {
-      const todo = await TodoModel.findById(id).lean();
+      const todo = await TodoModel.findById(id.toString()).lean();
       if (!todo) return undefined;
       
-      return {
-        id: todo._id.toString(),
-        text: todo.text,
-        completed: todo.completed
-      };
+      return convertToTodo(todo);
     } catch (error) {
       return undefined;
     }
@@ -47,29 +49,22 @@ export class MongoDBStorage implements IStorage {
   async createTodo(insertTodo: InsertTodo): Promise<Todo> {
     const newTodo = new TodoModel(insertTodo);
     const savedTodo = await newTodo.save();
+    const doc = savedTodo.toObject();
     
-    return {
-      id: savedTodo._id.toString(),
-      text: savedTodo.text,
-      completed: savedTodo.completed
-    };
+    return convertToTodo(doc);
   }
 
   async updateTodo(id: number, updates: Partial<InsertTodo>): Promise<Todo | undefined> {
     try {
       const updatedTodo = await TodoModel.findByIdAndUpdate(
-        id,
+        id.toString(),
         updates,
         { new: true } // Return the updated document
       ).lean();
       
       if (!updatedTodo) return undefined;
       
-      return {
-        id: updatedTodo._id.toString(),
-        text: updatedTodo.text,
-        completed: updatedTodo.completed
-      };
+      return convertToTodo(updatedTodo);
     } catch (error) {
       return undefined;
     }
@@ -77,7 +72,7 @@ export class MongoDBStorage implements IStorage {
 
   async deleteTodo(id: number): Promise<boolean> {
     try {
-      const result = await TodoModel.findByIdAndDelete(id);
+      const result = await TodoModel.findByIdAndDelete(id.toString());
       return !!result;
     } catch (error) {
       return false;

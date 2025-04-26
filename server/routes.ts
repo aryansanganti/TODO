@@ -1,8 +1,15 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage as memStorage } from "./storage";
+import { MongoDBStorage } from "./storage-mongodb";
 import { insertTodoSchema } from "@shared/schema";
 import { z } from "zod";
+import mongoose from "mongoose";
+
+// Create MongoDB storage if connected
+const mongodbStorage = mongoose.connection.readyState === 1 ? new MongoDBStorage() : null;
+// Use MongoDB storage if available, otherwise use memory storage
+const storage = mongodbStorage || memStorage;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
