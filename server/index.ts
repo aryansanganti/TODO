@@ -3,6 +3,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import dotenv from "dotenv";
 import { connectToMongoDB } from "./db/mongodb";
+import { storage, IStorage } from "./storage";
+import { MongoDBStorage } from "./storage-mongodb";
+import mongoose from "mongoose";
 
 // Load environment variables
 dotenv.config();
@@ -41,17 +44,36 @@ app.use((req, res, next) => {
   next();
 });
 
+// Storage selection function - for route handlers to access the appropriate storage
+// Will be initialized properly during startup
+export let getStorage = (): IStorage => storage;
+
 (async () => {
   // Try to connect to MongoDB if connection string is provided
+  let useMongoStorage = false;
+  
   if (process.env.MONGODB_URI) {
-    const connected = await connectToMongoDB();
-    if (connected) {
-      log("Using MongoDB for data storage", "app");
-    } else {
-      log("Failed to connect to MongoDB, falling back to in-memory storage", "app");
+    try {
+      const connected = await connectToMongoDB();
+      if (connected) {
+        log("Using MongoDB for data storage", "app");
+        useMongoStorage = true;
+      } else {
+        log("Failed to connect to MongoDB, falling back to in-memory storage", "app");
+      }
+    } catch (error) {
+      log(`MongoDB connection error: ${error}`, "app");
+      log("Falling back to in-memory storage", "app");
     }
   } else {
     log("No MongoDB connection string found, using in-memory storage", "app");
+  }
+
+  // Set up appropriate storage
+  if (useMongoStorage) {
+    const mongoStorage = new MongoDBStorage();
+    // Update the getStorage function to return MongoDB storage
+    getStorage = () => mongoStorage;
   }
 
   const server = await registerRoutes(app);
